@@ -15,7 +15,7 @@ namespace MadeInTheUSB.FT232H
         private const int _maxGpio             = 8;
         private const int ValuesDefaultMask    = 0;
         private const int DirectionDefaultMask = 0xFF;
-        
+
         private int       _values;
         private int       _directions;
 

@@ -7,7 +7,7 @@ using System.Threading;
 
 namespace MadeInTheUSB.FT232H
 {
-    public partial class LibMpsse
+    internal partial class LibMpsse
     {
         private static int _initializations = 0;
 

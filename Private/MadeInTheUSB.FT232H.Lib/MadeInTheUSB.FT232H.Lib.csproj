@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Exception\I2CNotConnectedException.cs" />
     <Compile Include="FTD2XX_NET\FT232HDetector.cs" />
     <Compile Include="FTD2XX_NET\FTD2XX_NET.cs" />
     <Compile Include="Enums\Common.cs" />
@@ -52,7 +53,13 @@
     <Compile Include="Exception\GpioException.cs" />
     <Compile Include="Exception\SpiChannelNotConnectedException.cs" />
     <Compile Include="FT232HDeviceBaseClass.cs" />
-    <Compile Include="I2C\I2C.cs" />
+    <Compile Include="I2C\FtdiMpsseI2CResult.cs" />
+    <Compile Include="I2C\FtI2CTransferOptions.cs" />
+    <Compile Include="I2C\GpioException.cs" />
+    <Compile Include="I2C\GpioI2CDevice.cs" />
+    <Compile Include="I2C\GpioI2CDeviceBaseClass.I2C.cs" />
+    <Compile Include="I2C\GpioI2CDeviceBaseClass.Gpio.cs" />
+    <Compile Include="I2C\II2C.cs" />
     <Compile Include="Interface\IDigitalWriteRead.cs" />
     <Compile Include="Interface\ISPI.cs" />
     <Compile Include="MPSSE\LibMpsse.I2c.cs" />
