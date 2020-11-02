@@ -1,4 +1,4 @@
-﻿using FTD2XX_NET;
+using FTD2XX_NET;
 using MadeInTheUSB.FT232H;
 using MadeInTheUSB.FT232H.I2C;
 using System;

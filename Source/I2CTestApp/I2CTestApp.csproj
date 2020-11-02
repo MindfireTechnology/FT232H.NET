@@ -47,27 +47,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Resources\ftd2xx.lib">
-      <Link>ftd2xx.lib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Private\MadeInTheUSB.FT232H.Lib\MadeInTheUSB.FT232H.Lib.csproj">
-      <Project>{d2610e23-15f7-4817-9111-d6870443882c}</Project>
-      <Name>MadeInTheUSB.FT232H.Lib</Name>
+    <ProjectReference Include="..\LibFt232h\LibFt232h.csproj">
+      <Project>{bc1eba28-c8a5-494b-a8a5-ccb1e7fc2533}</Project>
+      <Name>LibFt232h</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="..\Resources\ftd2xx64.dll">
-      <Link>ftd2xx64.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\Resources\libMPSSE.dll">
-      <Link>libMPSSE.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

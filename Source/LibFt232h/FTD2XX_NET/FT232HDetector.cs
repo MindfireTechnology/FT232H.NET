@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DynamicSugar;
+//using DynamicSugar;
 using static FTD2XX_NET.FTDI;
 
 namespace MadeInTheUSB.FT232H
@@ -67,14 +67,29 @@ namespace MadeInTheUSB.FT232H
             if(rr == FT_STATUS.FT_OK)
             {
                 r.Description = ee232h.Description;
-                r.Properties = ReflectionHelper.GetDictionary(ee232h);
+                r.Properties = GetDictionary(ee232h);
             }
             ft232h.Close();
             r.Ok = true;
             return r;
          }
 
-        private static bool Ok(FT_STATUS status)
+		private static Dictionary<string, object> GetDictionary(FT232H_EEPROM_STRUCTURE ee232h)
+		{
+			var result = new Dictionary<string, object>();
+			Type t = typeof(FT232H_EEPROM_STRUCTURE);
+			foreach (var field in t.GetFields())
+			{
+				string name = field.Name;
+				var value = field.GetValue(ee232h);
+
+				result.Add(name, value);
+			}
+
+			return result;
+		}
+
+		private static bool Ok(FT_STATUS status)
         {
             if(status == FT_STATUS.FT_OK)
                 return true;
