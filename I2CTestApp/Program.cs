@@ -84,21 +84,6 @@ namespace I2CTestApp
 
 		public static async Task Read(GpioI2CDevice device)
 		{
-			//for(uint i = 0; i < 255; i++)
-			//{
-			//	try
-			//	{
-			//		var exists = device.Write(i, new byte[] { 0b0010_1110 });
-
-			//		if (exists == FtdiMpsseI2CResult.Ok)
-			//			WriteLine($"Device found at address: {i}");
-			//	}
-			//	catch (I2CNotConnectedException ince)
-			//	{
-
-			//	}
-			//}
-
 			uint address = 0x39;
 			var result = device.Write(address, new byte[] { 0x80 });
 
