@@ -28,7 +28,7 @@ namespace I2CTestApp
 
                 I2C_CHANNEL_CONFIG config = new I2C_CHANNEL_CONFIG
                 {
-                    ClockRate = I2C_CLOCKRATE.I2C_CLOCK_FAST_MODE,
+                    ClockRate = I2C_CLOCKRATE.I2C_CLOCK_STANDARD_MODE,
                     LatencyTimer = 255
                 };
 
@@ -39,7 +39,7 @@ namespace I2CTestApp
                 int sizeTransferred;
                 try
                 {
-                    CheckResult(LibMpsse.I2C_DeviceRead(device, 0x40, 1, buffer, out sizeTransferred, 0));
+                    CheckResult(LibMpsse.I2C_DeviceRead(device, 0x39, 1, buffer, out sizeTransferred, (int)(FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_BREAK_ON_NACK | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BYTES)));
                 } 
                 catch (InvalidOperationException ex)
                 {
@@ -48,7 +48,7 @@ namespace I2CTestApp
 
                 try
                 {
-                    CheckResult(LibMpsse.I2C_DeviceWrite(device, 0x40, 1, new byte[] { 0xA5 }, out sizeTransferred, 0));
+                    CheckResult(LibMpsse.I2C_DeviceWrite(device, 0x39, 1, new byte[] { 0xA5 }, out sizeTransferred, (int)(FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_BREAK_ON_NACK | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BYTES)));
                 }
                 catch (InvalidOperationException ex)
                 {
