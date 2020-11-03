@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,27 +6,26 @@ using System.Threading.Tasks;
 
 namespace MadeInTheUSB.FT232H.I2C
 {
-	public partial class GpioI2CDeviceBaseClass
+	public partial class GpioI2CDeviceBaseClass : II2C
 	{
-		public FtdiMpsseI2CResult Write(uint device, byte[] buffer, int sizeToTransfer, out int sizeTransfered, FtI2CTransferOptions options = FtI2CTransferOptions.None)
+		public FtdiMpsseI2CResult Read(byte deviceAddress, byte[] buffer, int sizeToTransfer, out int sizeTransfered, FtI2CTransferOptions options = FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_BREAK_ON_NACK | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BITS)
 		{
-			var result = CheckResult(LibMpsse.I2C_DeviceWrite(_i2cHandle, (int)device, sizeToTransfer, buffer, out sizeTransfered, (int)options));
-			return result;
+			return CheckResult(LibMpsse.I2C_DeviceRead(_i2cHandle, deviceAddress, sizeToTransfer, buffer, out sizeTransfered, (int)options));
 		}
 
-		public FtdiMpsseI2CResult Write(uint device, byte[] buffer)
+		public FtdiMpsseI2CResult Read(byte deviceAddress, byte[] buffer)
 		{
-			return Write(device, buffer, buffer.Length, out int sizeTransfered, FtI2CTransferOptions.None);
+			return Read(deviceAddress, buffer, buffer.Length, out int sizeTransfered);
 		}
 
-		public FtdiMpsseI2CResult Read(uint device, byte[] buffer, int sizeToTransfer, out int sizeTransfered, FtI2CTransferOptions options = FtI2CTransferOptions.None)
+		public FtdiMpsseI2CResult Write(byte deviceAddress, byte[] buffer, int sizeToTransfer, out int sizeTransfered, FtI2CTransferOptions options = FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_BREAK_ON_NACK | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BITS)
 		{
-			return CheckResult(LibMpsse.I2C_DeviceRead(_i2cHandle, (int)device, sizeToTransfer, buffer, out sizeTransfered, (int)options));
+			return CheckResult(LibMpsse.I2C_DeviceWrite(_i2cHandle, deviceAddress, sizeToTransfer, buffer, out sizeTransfered, (int)options));
 		}
 
-		public FtdiMpsseI2CResult Read(uint device, byte[] buffer)
+		public FtdiMpsseI2CResult Write(byte deviceAddress, byte[] buffer)
 		{
-			return Read(device, buffer, buffer.Length, out int sizeTransfered, FtI2CTransferOptions.None);
+			return Write(deviceAddress, buffer, buffer.Length, out int sizeTransfered);
 		}
 
 		public bool Ok(FtdiMpsseI2CResult i2cResult) => i2cResult == FtdiMpsseI2CResult.Ok;

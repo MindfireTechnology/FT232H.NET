@@ -84,12 +84,8 @@ namespace I2CTestApp
 
 		public static async Task Read(GpioI2CDevice device)
 		{
-			uint address = 0x39;
-			var result = device.Write(address, new byte[] { 0x80 });
-
-			byte[] data = new byte[10];
-			result = device.Read(address, data, 2, out int size);
-			Console.WriteLine($"Read {size} bytes: {data}");
+			byte[] buffer = new byte[10];
+			device.Read(0x39, buffer);
 		}
 
 		//static void Main(string[] args)
@@ -104,7 +100,7 @@ namespace I2CTestApp
 		//        WriteLine($"Channel {channel}:");
 		//        WriteLine($"Flags: {info.Flags}; Type: {info.Type}");
 
-		//        CheckResult(LibMpsse.I2C_OpenChannel(channel, out IntPtr device));
+		//       LibMpsse.I2C_OpenChannel(channel, out IntPtr device)
 
 		//        I2C_CHANNEL_CONFIG config = new I2C_CHANNEL_CONFIG
 		//        {

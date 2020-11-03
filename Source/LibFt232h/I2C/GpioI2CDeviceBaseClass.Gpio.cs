@@ -1,4 +1,4 @@
-﻿using FTD2XX_NET;
+using FTD2XX_NET;
 using MadeInTheUSB.FT232H;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace MadeInTheUSB.FT232H.I2C
 {
-	public partial class GpioI2CDeviceBaseClass : FT232HDeviceBaseClass, IDisposable, IDigitalWriteRead, II2C
+	public partial class GpioI2CDeviceBaseClass : FT232HDeviceBaseClass, IDisposable, IDigitalWriteRead
 	{
 		protected const int gpioStartIndex = 0;
 		protected const int maxGpio = 9;
