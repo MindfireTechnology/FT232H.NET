@@ -99,27 +99,30 @@ namespace LibApds9960
 				WriteReg(Reg.WTIME, 0xFF);
 				WriteReg(Reg.GPULSE, 0x8f); // 16us, 16 pulses // default is: 0x40 = 8us, 1 pulse
 				WriteReg(Reg.PPULSE, 0x8f); // 16us, 16 pulses // default is: 0x40 = 8us, 1 pulse
-				EnableGestureInt();
+				EnableGestureInterrupt();
 				EnableGestureMode();
+				EnableProximityMode();
 				Enable();
 				EnableWaitMode();
 				WriteReg(Reg.ATIME, (byte)(256 - (10 / 2.78)));
 				WriteReg(Reg.CONTROL, 0x2);
-				await Task.Delay(1);
+				await Task.Delay(10);
 
 				Enable();
 			});
 		}
 
-		public void Disable()
-		{
-			WriteReg(Reg.ENABLE, 0);
-		}
-
 		public void Enable()
 		{
 			byte val = ReadReg(Reg.ENABLE);
-			val |= 0x1;
+			val |= 0b1;
+			WriteReg(Reg.ENABLE, val);
+		}
+
+		public void Disable()
+		{
+			byte val = ReadReg(Reg.ENABLE);
+			val &= 0b1111_1110;
 			WriteReg(Reg.ENABLE, val);
 		}
 
@@ -130,24 +133,28 @@ namespace LibApds9960
 			WriteReg(Reg.ENABLE, reg);
 		}
 
-		public void EnableProximity()
+		public void EnableProximityMode()
 		{
-
+			byte reg = ReadReg(Reg.ENABLE);
+			reg |= 0b10;
+			WriteReg(Reg.ENABLE, reg);
 		}
 
-		public void DisalbeProximity()
+		public void DisalbeProximityMode()
 		{
-
+			byte reg = ReadReg(Reg.ENABLE);
+			reg &= 0b1111_1101;
+			WriteReg(Reg.ENABLE, reg);
 		}
 
-		public void EnableGestureInt()
+		public void EnableGestureInterrupt()
 		{
 			byte reg = ReadReg(Reg.GCONF4);
 			reg |= 0b10;
 			WriteReg(Reg.GCONF4, reg);
 		}
 
-		public void DisableGestureInt()
+		public void DisableGestureInterrupt()
 		{
 			byte reg = ReadReg(Reg.GCONF4);
 			reg &= 0b1111_1101;
@@ -156,13 +163,20 @@ namespace LibApds9960
 
 		public void EnableGestureMode()
 		{
+			// Set Gesture Mode (GMODE) to 1
 			byte reg = ReadReg(Reg.GCONF4);
 			reg |= 0b01;
 			WriteReg(Reg.GCONF4, reg);
 
-			//reg = ReadReg(Reg.ENABLE);
-			//reg |= 0b0100_0000;
-			//WriteReg(Reg.ENABLE, reg);
+			// Set Gesture Direction Enable (GDIMS) to 1
+			reg = ReadReg(Reg.GCONF3);
+			reg |= 0b11;
+			WriteReg(Reg.GCONF3, reg);
+
+			// Set Gesture Enable
+			reg = ReadReg(Reg.ENABLE);
+			reg |= 0b0100_0000;
+			WriteReg(Reg.ENABLE, reg);
 		}
 
 		public void DisableGestureMode()
@@ -209,13 +223,16 @@ namespace LibApds9960
 
 		public bool GestureAvailable()
 		{
-			byte reg = ReadReg(Reg.GSTATUS);
-			if ((reg & 1) == 1)
-			{
-				return true;
-			}
+			byte reg = ReadReg(Reg.GFLVL);
+			return reg > 0;
 
-			return false;
+			//byte reg = ReadReg(Reg.GSTATUS);
+			//if ((reg & 1) == 1)
+			//{
+			//	return true;
+			//}
+
+			//return false;
 		}
 
 		public async Task<byte> ReadStatus()

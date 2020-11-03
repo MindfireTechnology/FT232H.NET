@@ -3,6 +3,7 @@ using MadeInTheUSB.FT232H;
 using MadeInTheUSB.FT232H.I2C;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,7 +41,8 @@ namespace I2CTestApp
 				{
 					byte status = await gsensor.ReadStatus();
 					byte gstatus = await gsensor.ReadGestureStatus();
-					await Task.Delay(10);
+					Debug.WriteLine($"Status: {status.ToString("X")}; GStatus: {gstatus.ToString("X")}");
+					await Task.Delay(1000);
 				}
 
 				Console.WriteLine("Gesture is available!");
