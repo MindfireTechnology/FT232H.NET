@@ -13,7 +13,7 @@ namespace I2CTestApp
 {
 	class Program
 	{
-		static void Main(string[] args)
+		static async Task Main(string[] args)
 		{
 			var ft232Device = FT232HDetector.Detect();
 
@@ -33,7 +33,20 @@ namespace I2CTestApp
 				var gpios = i2cDevice.GPIO;
 				Blink(gpios, 4, 5, 250).Wait();
 
-				Read(i2cDevice).Wait();
+				var gsensor = new LibApds9960.Apds9660GestureSensor(i2cDevice, gpios, 4);
+				await gsensor.Init();
+
+				while (!gsensor.GestureAvailable())
+				{
+					byte status = await gsensor.ReadStatus();
+					byte gstatus = await gsensor.ReadGestureStatus();
+					await Task.Delay(10);
+				}
+
+				Console.WriteLine("Gesture is available!");
+				byte[] data = await gsensor.ReadAvailableGestures();
+
+				//Read(i2cDevice).Wait();
 			}
 			catch (Exception e)
 			{

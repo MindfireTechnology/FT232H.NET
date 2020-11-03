@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{279C5AC3-BF9F-4A60-9E52-92E2D85DC628}</ProjectGuid>
+    <ProjectGuid>{7263549B-0A86-4C27-A487-6A6F6F797D93}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MadeInTheUSB.FT232H.Component</RootNamespace>
@@ -57,9 +57,9 @@
     <Compile Include="Utils\Serializer.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Private\MadeInTheUSB.FT232H.Lib\MadeInTheUSB.FT232H.Lib.csproj">
-      <Project>{d2610e23-15f7-4817-9111-d6870443882c}</Project>
-      <Name>MadeInTheUSB.FT232H.Lib</Name>
+    <ProjectReference Include="..\LibFt232h\LibFt232h.csproj">
+      <Project>{bc1eba28-c8a5-494b-a8a5-ccb1e7fc2533}</Project>
+      <Name>LibFt232h</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

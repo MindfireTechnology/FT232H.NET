@@ -50,6 +50,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\LibApds9960\LibApds9960.csproj">
+      <Project>{fe6d6bce-d312-4b27-89bd-c83efd834fb6}</Project>
+      <Name>LibApds9960</Name>
+    </ProjectReference>
     <ProjectReference Include="..\LibFt232h\LibFt232h.csproj">
       <Project>{bc1eba28-c8a5-494b-a8a5-ccb1e7fc2533}</Project>
       <Name>LibFt232h</Name>

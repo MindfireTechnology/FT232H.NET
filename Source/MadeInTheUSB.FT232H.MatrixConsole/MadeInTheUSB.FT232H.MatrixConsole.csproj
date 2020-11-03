@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{34B37341-E125-4849-ABE2-D37275374F61}</ProjectGuid>
+    <ProjectGuid>{7FB506C5-575C-4D19-ADC6-E0B371AE3693}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>MadeInTheUSB.FT232H.MatrixConsole</RootNamespace>
     <AssemblyName>MadeInTheUSB.FT232H.MatrixConsole</AssemblyName>
@@ -49,9 +49,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Private\MadeInTheUSB.FT232H.Lib\MadeInTheUSB.FT232H.Lib.csproj">
-      <Project>{d2610e23-15f7-4817-9111-d6870443882c}</Project>
-      <Name>MadeInTheUSB.FT232H.Lib</Name>
+    <ProjectReference Include="..\LibFt232h\LibFt232h.csproj">
+      <Project>{bc1eba28-c8a5-494b-a8a5-ccb1e7fc2533}</Project>
+      <Name>LibFt232h</Name>
     </ProjectReference>
     <ProjectReference Include="..\MadeInTheUSB.FT232H.Component\MadeInTheUSB.FT232H.Component.csproj">
       <Project>{279c5ac3-bf9f-4a60-9e52-92e2d85dc628}</Project>
