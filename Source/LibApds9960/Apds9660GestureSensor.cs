@@ -8,8 +8,8 @@ using MadeInTheUSB.FT232H.I2C;
 
 namespace LibApds9960
 {
-    public class Apds9660GestureSensor : IDisposable
-    {
+	public class Apds9660GestureSensor : IDisposable
+	{
 		public byte Address { get; set; } = 0x39;
 		public II2C Device { get; }
 		public IDigitalWriteRead Gpio { get; }

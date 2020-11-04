@@ -58,6 +58,10 @@
       <Project>{bc1eba28-c8a5-494b-a8a5-ccb1e7fc2533}</Project>
       <Name>LibFt232h</Name>
     </ProjectReference>
+    <ProjectReference Include="..\LibMlx90614esf\LibMlx90614esf.csproj">
+      <Project>{F55BA6AD-8398-41A9-95BD-0192B1032A09}</Project>
+      <Name>LibMlx90614esf</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
