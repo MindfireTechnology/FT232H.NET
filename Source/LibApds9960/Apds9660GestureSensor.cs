@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Schema;
 using MadeInTheUSB.FT232H;
@@ -9,6 +10,18 @@ using MadeInTheUSB.FT232H.I2C;
 
 namespace LibApds9960
 {
+	[Flags]
+	public enum Gesture
+	{
+		Unrecongnized = 0,
+		LeftToRight = 1,
+		RightToLeft = 2,
+		TopToBottom = 4,
+		BottomToTop = 8,
+		Bop = 16,
+		PullAway = 32
+	}
+
     public class Apds9660GestureSensor : IDisposable
     {
 		public byte Address { get; set; } = 0x39;
@@ -234,11 +247,15 @@ namespace LibApds9960
 
 		public bool GestureAvailable()
 		{
-			byte reg = ReadReg(Reg.GSTATUS);
-			if ((reg & 1) == 1)
-			{
-				return true;
-			}
+			// Check for the gesture interrupt
+			byte reg = ReadReg(Reg.STATUS);
+			return (reg & 0b000_0100) > 0;
+
+			//byte reg = ReadReg(Reg.GSTATUS);
+			//if ((reg & 1) == 1)
+			//{
+			//	return true;
+			//}
 
 			//reg = ReadReg(Reg.GCONF4);
 			//reg &= 0b01;
@@ -247,10 +264,13 @@ namespace LibApds9960
 			return false;
 		}
 
-		public void SetGestureThreshold(byte level)
+		public void SetGestureThreshold(byte highLevel, byte lowLevel, byte gestureRecognizeMin)
 		{
-			WriteReg(Reg.GPENTH, level);
-			WriteReg(Reg.GEXTH, (byte)(level - 1));
+			WriteReg(Reg.GPENTH, highLevel);
+			WriteReg(Reg.GEXTH, lowLevel);
+			byte reg = ReadReg(Reg.GCONF1);
+			reg |= (byte)(0b0000_0011 & gestureRecognizeMin);
+			WriteReg(Reg.GCONF1, reg);
 		}
 
 		public void SetGainAndIrIntensity(byte gain, byte irIntensity)
@@ -271,7 +291,7 @@ namespace LibApds9960
 			return ReadReg(Reg.GSTATUS);
 		}
 
-		public async Task<byte[]> ReadAvailableGestures()
+		public async Task<byte[]> ReadAvailableGestureData()
 		{
 			byte reg = ReadReg(Reg.GFLVL);
 			if (reg == 0)
@@ -282,6 +302,90 @@ namespace LibApds9960
 			Device.Read(Address, buffer);
 
 			return buffer;
+		}
+
+		public async ValueTask<Gesture> ReadGesture()
+		{
+			// A breif delay to wait for all of the buffer data to be there
+			//byte[] values  = await ReadAvailableGestureData();
+
+			//await Task.Delay(200);
+			//byte[] values2 = await ReadAvailableGestureData();
+
+			//byte[] values = new byte[values1.Length + values2.Length];
+			//Array.Copy(values1, values, values1.Length);
+			//Array.Copy(values2, 0, values, values1.Length, values2.Length);
+
+			// Wait a maximum of 700ms for hopefully 32 sets of data
+			List<byte> bytes = new List<byte>();
+			Stopwatch sw = Stopwatch.StartNew();
+			int totalreads = 0;
+			do
+			{
+				bytes.AddRange(await ReadAvailableGestureData());
+				sw.Restart();
+				totalreads++;
+				await Task.Delay(50);
+			} while (bytes.Count < 4 * 32 && sw.ElapsedMilliseconds < 600);
+
+			byte[] values = bytes.ToArray();
+			Debug.WriteLine($"{totalreads} Reads - Gesture Buffer({values.Length / 4}): {string.Join(", ", values.Select(n => "0x" + n.ToString("X").PadLeft(2, '0')))}");
+
+			var result = Gesture.Unrecongnized;
+
+			int samples = values.Length / 4;
+			if (samples < 8)
+				return Gesture.Unrecongnized;
+
+			byte[] channelUp = values.Where((x, i) => i == 0 || i % 4 == 0).ToArray();
+			byte[] channelDown = values.Skip(1).Where((x, i) => i == 0 || i % 4 == 0).ToArray();
+			byte[] channelLeft = values.Skip(2).Where((x, i) => i == 0 || i % 4 == 0).ToArray();
+			byte[] channelRight = values.Skip(3).Where((x, i) => i == 0 || i % 4 == 0).ToArray();
+
+			// Search for the peaks in the data
+			int channelUpPeakIndex = IndexOfMax(channelUp, channelUp.Max());
+			int channelDownPeakIndex = IndexOfMax(channelDown, channelDown.Max());
+			int channelLeftPeakIndex = IndexOfMax(channelLeft, channelLeft.Max());
+			int channelRightPeakIndex = IndexOfMax(channelRight, channelRight.Max());
+
+			// Evalueate each curve to see if there is anything to look at
+			double centerpointRatioUp = Math.Abs(channelUpPeakIndex / (double)samples - 0.5);
+			double centerpointRatioDown = Math.Abs(channelDownPeakIndex / (double)samples - 0.5);
+			double centerpointRatioLeft = Math.Abs(channelLeftPeakIndex / (double)samples - 0.5);
+			double centerpointRatioRight = Math.Abs(channelRightPeakIndex / (double)samples - 0.5);
+
+			if (centerpointRatioUp < 0.3 && centerpointRatioDown < 0.3)
+			{
+				int upDownDiff = channelUpPeakIndex - channelDownPeakIndex;
+
+				if (upDownDiff > 0 && upDownDiff >= 3)
+					result |= Gesture.BottomToTop;
+				else if (upDownDiff < 0 && (upDownDiff * -1) >= 3)
+					result |= Gesture.TopToBottom;
+			}
+
+			if (centerpointRatioLeft < 0.3 && centerpointRatioRight < 0.3)
+			{
+				int leftRightDiff = channelLeftPeakIndex - channelRightPeakIndex;
+
+				if (leftRightDiff > 0 && leftRightDiff >= 3)
+					result |= Gesture.RightToLeft;
+				else if (leftRightDiff < 0 && (leftRightDiff * -1) >= 3)
+					result |= Gesture.LeftToRight;
+			}
+
+			return result;
+		}
+
+		protected int IndexOfMax(byte[] values, byte max)
+		{
+			for (int index = 0; index < values.Length; index++)
+			{
+				if (values[index] == max)
+					return index;
+			}
+
+			return -1;
 		}
 
 		protected class Reg

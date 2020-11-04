@@ -36,8 +36,11 @@ namespace I2CTestApp
 
 				var gsensor = new LibApds9960.Apds9660GestureSensor(i2cDevice, gpios, 4);
 				await gsensor.Init();
-				gsensor.SetGestureThreshold(0x30);
-				gsensor.SetGainAndIrIntensity(0b11, 0b11);
+
+				// Trying to figure out sane values for these:
+				gsensor.SetGestureThreshold(0x30, 0x20, 0b11);
+				gsensor.SetGainAndIrIntensity(0b11 /* Full Gain */, 0b11 /* Full Intensity */);
+
 				do
 				{
 					while (!gsensor.GestureAvailable())
@@ -49,10 +52,14 @@ namespace I2CTestApp
 					}
 
 					//Console.WriteLine("Gesture is available!");
-					byte[] data = await gsensor.ReadAvailableGestures();
-					string hexstring = BytesToHexString(data);
-					WriteLine($"Gesture Data:\n{hexstring}");
-					await Task.Delay(1000);
+					//byte[] data = await gsensor.ReadAvailableGestureData();
+					//string hexstring = BytesToHexString(data);
+					//WriteLine($"Gesture Data:\n{hexstring}");
+
+					var result = await gsensor.ReadGesture();
+					WriteLine(result);
+
+					//await Task.Delay(1000);
 					//Read(i2cDevice).Wait();
 				} while (true);
 			}
