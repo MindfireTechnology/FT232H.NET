@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Xml.Schema;
 using MadeInTheUSB.FT232H;
 using MadeInTheUSB.FT232H.I2C;
 
@@ -76,10 +77,18 @@ namespace LibApds9960
 
 		protected virtual byte ReadReg(string reg)
 		{
-			Device.Write(Address, new[] { Registers[reg]});
 			byte[] result = new byte[1];
-			Device.Read(Address, result);
+			Device.Write(Address, new[] { Registers[reg]}, 1, out int sizetransferred, FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BYTES);
+			Device.Read(Address, result, 1, out sizetransferred, FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_STOP_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BYTES);
 			return result[0];
+		}
+
+		protected virtual byte[] ReadRegBytes(string reg, int length)
+		{
+			byte[] result = new byte[length];
+			Device.Write(Address, new[] { Registers[reg] }, 1, out int sizetransferred, FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BYTES);
+			Device.Read(Address, result, length, out sizetransferred, FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_START_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_STOP_BIT | FtI2CTransferOptions.I2C_TRANSFER_OPTIONS_FAST_TRANSFER_BYTES);
+			return result;
 		}
 
 		protected virtual void WriteReg(string reg, byte value)
@@ -136,14 +145,14 @@ namespace LibApds9960
 		public void EnableProximityMode()
 		{
 			byte reg = ReadReg(Reg.ENABLE);
-			reg |= 0b10;
+			reg |= 0b100;
 			WriteReg(Reg.ENABLE, reg);
 		}
 
 		public void DisalbeProximityMode()
 		{
 			byte reg = ReadReg(Reg.ENABLE);
-			reg &= 0b1111_1101;
+			reg &= 0b1111_1011;
 			WriteReg(Reg.ENABLE, reg);
 		}
 
@@ -163,12 +172,14 @@ namespace LibApds9960
 
 		public void EnableGestureMode()
 		{
-			// Set Gesture Mode (GMODE) to 1
-			byte reg = ReadReg(Reg.GCONF4);
-			reg |= 0b01;
-			WriteReg(Reg.GCONF4, reg);
+			byte reg;
 
-			// Set Gesture Direction Enable (GDIMS) to 1
+			// Set Gesture Mode (GMODE) to 1
+			//reg = ReadReg(Reg.GCONF4);
+			//reg |= 0b01;
+			//WriteReg(Reg.GCONF4, reg);
+
+			// Set Gesture Direction Enable (GDIMS) to 0b11 (both directions)
 			reg = ReadReg(Reg.GCONF3);
 			reg |= 0b11;
 			WriteReg(Reg.GCONF3, reg);
@@ -223,16 +234,31 @@ namespace LibApds9960
 
 		public bool GestureAvailable()
 		{
-			byte reg = ReadReg(Reg.GFLVL);
-			return reg > 0;
+			byte reg = ReadReg(Reg.GSTATUS);
+			if ((reg & 1) == 1)
+			{
+				return true;
+			}
 
-			//byte reg = ReadReg(Reg.GSTATUS);
-			//if ((reg & 1) == 1)
-			//{
-			//	return true;
-			//}
+			//reg = ReadReg(Reg.GCONF4);
+			//reg &= 0b01;
+			//Debug.WriteLine($"GMODE = {reg > 0}");
 
-			//return false;
+			return false;
+		}
+
+		public void SetGestureThreshold(byte level)
+		{
+			WriteReg(Reg.GPENTH, level);
+			WriteReg(Reg.GEXTH, (byte)(level - 1));
+		}
+
+		public void SetGainAndIrIntensity(byte gain, byte irIntensity)
+		{
+			//GGAIN & GLDRIVE
+			var reg = ReadReg(Reg.GCONF2);
+			reg |= (byte)((0b1100_0000 & (gain << 6)) | (0b0011_0000 & (irIntensity << 4)));
+			WriteReg(Reg.CONFIG2, reg);
 		}
 
 		public async Task<byte> ReadStatus()
@@ -248,6 +274,9 @@ namespace LibApds9960
 		public async Task<byte[]> ReadAvailableGestures()
 		{
 			byte reg = ReadReg(Reg.GFLVL);
+			if (reg == 0)
+				return new byte[0];
+
 			byte[] buffer = new byte[reg * 4];
 			Device.Write(Address, new[] { Registers[Reg.GFIFO_U] });
 			Device.Read(Address, buffer);

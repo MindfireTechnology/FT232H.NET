@@ -25,9 +25,9 @@ namespace I2CTestApp
 
 			var i2cDevice = new GpioI2CDevice(new I2C_CHANNEL_CONFIG
 			{
-				ClockRate = I2C_CLOCKRATE.I2C_CLOCK_STANDARD_MODE,
-				LatencyTimer = 255
-			}, 0);
+				ClockRate = I2C_CLOCKRATE.I2C_CLOCK_FAST_MODE,
+				LatencyTimer = 1
+			}, channelIndex: 0);
 
 			try
 			{
@@ -36,25 +36,47 @@ namespace I2CTestApp
 
 				var gsensor = new LibApds9960.Apds9660GestureSensor(i2cDevice, gpios, 4);
 				await gsensor.Init();
-
-				while (!gsensor.GestureAvailable())
+				gsensor.SetGestureThreshold(0x30);
+				gsensor.SetGainAndIrIntensity(0b11, 0b11);
+				do
 				{
-					byte status = await gsensor.ReadStatus();
-					byte gstatus = await gsensor.ReadGestureStatus();
-					Debug.WriteLine($"Status: {status.ToString("X")}; GStatus: {gstatus.ToString("X")}");
+					while (!gsensor.GestureAvailable())
+					{
+						//byte status = await gsensor.ReadStatus();
+						//byte gstatus = await gsensor.ReadGestureStatus();
+						//Debug.WriteLine($"Status: {status.ToString("X")}; GStatus: {gstatus.ToString("X")}");
+						await Task.Delay(10);
+					}
+
+					//Console.WriteLine("Gesture is available!");
+					byte[] data = await gsensor.ReadAvailableGestures();
+					string hexstring = BytesToHexString(data);
+					WriteLine($"Gesture Data:\n{hexstring}");
 					await Task.Delay(1000);
-				}
-
-				Console.WriteLine("Gesture is available!");
-				byte[] data = await gsensor.ReadAvailableGestures();
-
-				//Read(i2cDevice).Wait();
+					//Read(i2cDevice).Wait();
+				} while (true);
 			}
 			catch (Exception e)
 			{
 				WriteLine(e);
 				Console.Read();
 			}
+		}
+
+		private static string BytesToHexString(byte[] data)
+		{
+			StringBuilder sb = new StringBuilder();
+			int bytes = 0;
+			foreach (var b in data)
+			{
+				sb.Append(b.ToString("X").PadLeft(2, '0') + ' ');
+				if (++bytes % 4 == 0)
+					sb.AppendLine();
+			}
+
+			sb.AppendLine();
+
+			return sb.ToString();
 		}
 
 		public static async Task BlinkAll(IDigitalWriteRead gpios, int times = 1000, int delay = 500)

@@ -36,7 +36,7 @@ namespace FTD2XX_NET
 	/// <summary>
 	/// Class wrapper for FTD2XX.DLL
 	/// </summary>
-	public class FTDI
+	public class FTDI : IFTDI
 	{
 		#region CONSTRUCTOR_DESTRUCTOR
 		// constructor
@@ -74,7 +74,7 @@ namespace FTD2XX_NET
 		/// <summary>
 		/// Non default constructor allowing passing of string for dll handle.
 		/// </summary>
-		public FTDI(String path)
+		public FTDI(string path)
 		{
 			// If nonstandard.DLL is NOT loaded already, load it
 			if (path == "")
@@ -101,9 +101,7 @@ namespace FTD2XX_NET
 			else
 			{
 				Console.WriteLine("Failed to load FTD2XX.DLL.  Are the FTDI drivers installed?");
-#if DEBUG
-				this.Throw("Failed to load FTD2XX.DLL.  Are the FTDI drivers installed?");
-#endif
+				Throw("Failed to load FTD2XX.DLL.  Are the FTDI drivers installed?");
 			}
 		}
 
