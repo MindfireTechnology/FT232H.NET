@@ -1,4 +1,5 @@
 using FTD2XX_NET;
+using LibMlx90614esf;
 using MadeInTheUSB.FT232H;
 using MadeInTheUSB.FT232H.I2C;
 using System;
@@ -32,10 +33,9 @@ namespace I2CTestApp
 			try
 			{
 				var gpios = i2cDevice.GPIO;
-				Blink(gpios, 4, 5, 250).Wait();
+				await Blink(gpios, 4, 5, 250);
 
-				var gsensor = new LibApds9960.Apds9660GestureSensor(i2cDevice, gpios, 4);
-				await gsensor.Init();
+				var tempSensor = new Mlx90614(i2cDevice, 0x2A) { TempInF = true };
 
 				// Trying to figure out sane values for these:
 				gsensor.SetGestureThreshold(0x30, 0x20, 0b11);
@@ -62,12 +62,31 @@ namespace I2CTestApp
 					//await Task.Delay(1000);
 					//Read(i2cDevice).Wait();
 				} while (true);
+				//try
+				//{
+				//	await tempSensor.SetAddress(0x2A);
+				//}
+				//catch { }
+
+				var temperatures = new List<string>();
+
+				for (int i = 0; i < 100; i++)
+				{
+					var ambientTemp = await tempSensor.ReadAmbientTemperature();
+					var objectTemp = await tempSensor.ReadObjectTemperature();
+
+					Console.WriteLine($"Ambient: {ambientTemp}, Object: {objectTemp}");
+					temperatures.Add($"Ambient: {ambientTemp}, Object: {objectTemp}");
+
+					await Task.Delay(1000);
+				}
 			}
 			catch (Exception e)
 			{
 				WriteLine(e);
-				Console.Read();
 			}
+			WriteLine("Press any key to exit...");
+			Console.Read();
 		}
 
 		private static string BytesToHexString(byte[] data)

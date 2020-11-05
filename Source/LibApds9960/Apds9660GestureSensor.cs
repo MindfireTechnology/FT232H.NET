@@ -345,7 +345,7 @@ namespace LibApds9960
 			byte[] channelLeft = values.Skip(2).Where((x, i) => i == 0 || i % 4 == 0).ToArray();
 			byte[] channelRight = values.Skip(3).Where((x, i) => i == 0 || i % 4 == 0).ToArray();
 
-			// Look for a cross between channels 
+			// Look for a cross between channels
 			int upDownCrossingPoint = LinesCrossIndex(channelUp, channelDown, 30);
 			int leftRightCrossingPoint = LinesCrossIndex(channelLeft, channelRight, 30);
 
