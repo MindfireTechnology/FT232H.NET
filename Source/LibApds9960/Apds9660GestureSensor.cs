@@ -329,7 +329,7 @@ namespace LibApds9960
 				lastRead.Restart();
 				totalreads++;
 				await Task.Delay(50);
-			} while (lastRead.ElapsedMilliseconds < 600 && totalElapsed.ElapsedMilliseconds < 2000);
+			} while (lastRead.ElapsedMilliseconds < 500 && totalElapsed.ElapsedMilliseconds < 1000);
 
 			byte[] values = bytes.ToArray();
 			Debug.WriteLine($"{totalreads} Reads - Gesture Buffer({values.Length / 4}): {string.Join(", ", values.Select(n => "0x" + n.ToString("X").PadLeft(2, '0')))}");
