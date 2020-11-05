@@ -304,6 +304,8 @@ namespace LibApds9960
 			return buffer;
 		}
 
+
+		protected const int MinIncidenceAngle = 12;
 		public async ValueTask<Gesture> ReadGesture()
 		{
 			// A breif delay to wait for all of the buffer data to be there
@@ -318,15 +320,16 @@ namespace LibApds9960
 
 			// Wait a maximum of 700ms for hopefully 32 sets of data
 			List<byte> bytes = new List<byte>();
-			Stopwatch sw = Stopwatch.StartNew();
+			var lastRead = Stopwatch.StartNew();
+			var totalElapsed = Stopwatch.StartNew();
 			int totalreads = 0;
 			do
 			{
 				bytes.AddRange(await ReadAvailableGestureData());
-				sw.Restart();
+				lastRead.Restart();
 				totalreads++;
 				await Task.Delay(50);
-			} while (bytes.Count < 4 * 32 && sw.ElapsedMilliseconds < 600);
+			} while (lastRead.ElapsedMilliseconds < 600 && totalElapsed.ElapsedMilliseconds < 2000);
 
 			byte[] values = bytes.ToArray();
 			Debug.WriteLine($"{totalreads} Reads - Gesture Buffer({values.Length / 4}): {string.Join(", ", values.Select(n => "0x" + n.ToString("X").PadLeft(2, '0')))}");
@@ -342,39 +345,125 @@ namespace LibApds9960
 			byte[] channelLeft = values.Skip(2).Where((x, i) => i == 0 || i % 4 == 0).ToArray();
 			byte[] channelRight = values.Skip(3).Where((x, i) => i == 0 || i % 4 == 0).ToArray();
 
-			// Search for the peaks in the data
-			int channelUpPeakIndex = IndexOfMax(channelUp, channelUp.Max());
-			int channelDownPeakIndex = IndexOfMax(channelDown, channelDown.Max());
-			int channelLeftPeakIndex = IndexOfMax(channelLeft, channelLeft.Max());
-			int channelRightPeakIndex = IndexOfMax(channelRight, channelRight.Max());
+			// Look for a cross between channels 
+			int upDownCrossingPoint = LinesCrossIndex(channelUp, channelDown, 30);
+			int leftRightCrossingPoint = LinesCrossIndex(channelLeft, channelRight, 30);
 
-			// Evalueate each curve to see if there is anything to look at
-			double centerpointRatioUp = Math.Abs(channelUpPeakIndex / (double)samples - 0.5);
-			double centerpointRatioDown = Math.Abs(channelDownPeakIndex / (double)samples - 0.5);
-			double centerpointRatioLeft = Math.Abs(channelLeftPeakIndex / (double)samples - 0.5);
-			double centerpointRatioRight = Math.Abs(channelRightPeakIndex / (double)samples - 0.5);
-
-			if (centerpointRatioUp < 0.3 && centerpointRatioDown < 0.3)
+			if (upDownCrossingPoint > 0)
 			{
-				int upDownDiff = channelUpPeakIndex - channelDownPeakIndex;
+				double slopeUp = LineSlopeAtCenterIndex(channelUp, upDownCrossingPoint);
+				double slopeDown = LineSlopeAtCenterIndex(channelDown, upDownCrossingPoint);
 
-				if (upDownDiff > 0 && upDownDiff >= 3)
-					result |= Gesture.BottomToTop;
-				else if (upDownDiff < 0 && (upDownDiff * -1) >= 3)
-					result |= Gesture.TopToBottom;
+				double incidenceAngle = CalculateIncidenceAngle(slopeUp, slopeDown);
+
+				if (incidenceAngle > MinIncidenceAngle)
+				{
+					if (slopeUp < slopeDown)
+						result |= Gesture.BottomToTop;
+					else if (slopeDown < slopeUp)
+						result |= Gesture.TopToBottom;
+				}
 			}
 
-			if (centerpointRatioLeft < 0.3 && centerpointRatioRight < 0.3)
+			if (leftRightCrossingPoint > 0)
 			{
-				int leftRightDiff = channelLeftPeakIndex - channelRightPeakIndex;
+				double slopeLeft = LineSlopeAtCenterIndex(channelLeft, leftRightCrossingPoint);
+				double slopeRight = LineSlopeAtCenterIndex(channelRight, leftRightCrossingPoint);
 
-				if (leftRightDiff > 0 && leftRightDiff >= 3)
-					result |= Gesture.RightToLeft;
-				else if (leftRightDiff < 0 && (leftRightDiff * -1) >= 3)
-					result |= Gesture.LeftToRight;
+				double incidenceAngle = CalculateIncidenceAngle(slopeLeft, slopeRight);
+
+				if (incidenceAngle > MinIncidenceAngle)
+				{
+					if (slopeLeft < slopeRight)
+						result |= Gesture.RightToLeft;
+					else if (slopeRight < slopeLeft)
+						result |= Gesture.LeftToRight;
+				}
 			}
 
 			return result;
+		}
+
+		private double CalculateIncidenceAngle(double slope1, double slope2)
+		{
+			// Calculation of angle of incidence of two slopes
+			// tan θ = |  m2 - m1  |
+			//         |-----------|
+			//         | 1 + m1*m2 |
+
+			return Math.Atan(Math.Abs((slope2 - slope1) / (1 + slope1 * slope2))) * (180 / Math.PI);
+		}
+
+		const int SlopeSamples = 3;
+		protected double LineSlopeAtCenterIndex(byte[] series, int lineSegmentMidpoint)
+		{
+
+			if (lineSegmentMidpoint < SlopeSamples)
+				return 0; // Too soon in the line -- We can't compute
+
+			if (lineSegmentMidpoint + SlopeSamples > series.Length)
+				return 0; // Too late in the line -- We can't compute
+
+			// *** Step 1: Complete each column of the table
+			// Average of all x-coords
+			double xValAvg = Enumerable.Range(-1 * SlopeSamples, SlopeSamples * 2 + 1)
+				.Select(x => x + lineSegmentMidpoint)
+				.Average();
+
+			// Average of all y-coords
+			double yValAvg = Enumerable.Range(-1 * SlopeSamples, SlopeSamples * 2 + 1)
+				.Select(x => (int)series[lineSegmentMidpoint + x])
+				.Average();
+
+			// Column 1: the differences between each x-coordinate and the average of all of the x-coordinates
+			double[] col1 = Enumerable.Range(-1 * SlopeSamples, SlopeSamples * 2 + 1)
+				.Select(x => (x + lineSegmentMidpoint) - xValAvg)
+				.ToArray();
+
+			// Column 2: the difference between each y-coordinate and the average of all of the y-coordinates
+			double[] col2 = Enumerable.Range(-1 * SlopeSamples, SlopeSamples * 2 + 1)
+				.Select(x => series[lineSegmentMidpoint + x] - xValAvg)
+				.ToArray();
+
+			// Column 3: multiply columns 1 and 2
+			double[] col3 = Enumerable.Range(0, SlopeSamples * 2 + 1)
+				.Select(x => col1[x] * col2[x])
+				.ToArray();
+
+			// Column 4: multiply column 1 by itself
+			double[] col4 = col1
+				.Select(x => x * x)
+				.ToArray();
+
+			// *** Step 2: Calculate the slope (m) of your trend line by dividing the total for Column 3 by the total for Column 4
+			double slope = col3.Sum() / col4.Sum();
+
+			return slope;
+		}
+
+		protected int LinesCrossIndex(byte[] first, byte[] second, int floor)
+		{
+			// Step 1, find the first cross point above the floor
+			bool? firstLarger = null;
+			for (int index = 0; index < first.Length; index++)
+			{
+				byte s1 = first[index];
+				byte s2 = second[index];
+
+				if (s1 > floor && s2 > floor)
+				{
+					if (firstLarger == null)
+					{
+						firstLarger = s1 > s2;
+					}
+					else if ((firstLarger.Value && s2 > s1) || (!firstLarger.Value && s1 > s2))
+					{
+						return index;
+					}
+				}
+			}
+
+			return -1;
 		}
 
 		protected int IndexOfMax(byte[] values, byte max)
